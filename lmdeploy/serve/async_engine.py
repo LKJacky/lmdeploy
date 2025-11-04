@@ -97,6 +97,7 @@ class GenOut:
 
     # for disaggregation
     cache_block_ids: List[int] = None
+    input_ids:List[int] = None
 
 
 def _gen_out_to_response(out: GenOut, index) -> Response:
@@ -804,7 +805,7 @@ class AsyncEngine(LogitsMixin):
             gen_config.max_new_tokens = max(0, self.session_len - self.id2step[session_id] - len(input_ids))
             if gen_config.max_new_tokens == 0:
                 logger.error(f'run out of tokens. session={session_id}.')
-                yield GenOut('', self.id2step[session_id], len(input_ids), 0, 'length')
+                yield GenOut('', self.id2step[session_id], len(input_ids), 0, 'length',input_ids=input_ids)
                 if sequence_end is True and sequence_start is False:
                     await self.end_session(session_id)
                 return
@@ -817,7 +818,7 @@ class AsyncEngine(LogitsMixin):
                          input_token_len=len(input_ids),
                          generate_token_len=0,
                          finish_reason='error',
-                         token_ids=[])
+                         token_ids=[],input_ids=input_ids)
             return
 
         def is_error(status):
@@ -879,7 +880,7 @@ class AsyncEngine(LogitsMixin):
                                  gen_len,
                                  finish_reason,
                                  token_ids=res,
-                                 cache_block_ids=outputs.cache_block_ids)
+                                 cache_block_ids=outputs.cache_block_ids,input_ids=input_ids)
                     if outputs.logprobs is not None:
                         out.logprobs = (outputs.logprobs[:-hit_stop_token] if hit_stop_token else outputs.logprobs)
                     if outputs.last_hidden_state is not None:
@@ -918,7 +919,7 @@ class AsyncEngine(LogitsMixin):
                                  logprobs=logprobs,
                                  logits=logits,
                                  last_hidden_state=last_hidden_state,
-                                 cache_block_ids=outputs.cache_block_ids)
+                                 cache_block_ids=outputs.cache_block_ids,input_ids=input_ids)
                     # Update a session's sequence only when it is in finished status
                     if outputs.status == ResponseType.FINISH:
                         if rewind_stop_tokens:
@@ -933,7 +934,7 @@ class AsyncEngine(LogitsMixin):
                                  input_token_len=len(input_ids),
                                  generate_token_len=0,
                                  finish_reason='error',
-                                 token_ids=[])
+                                 token_ids=[],input_ids=input_ids)
             # update step
             if sequence_end:
                 self.id2step[session_id] = 0

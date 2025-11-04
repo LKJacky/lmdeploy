@@ -568,11 +568,14 @@ async def chat_completions_v1(request: ChatCompletionRequest, raw_request: Reque
     text = ''
     cache_block_ids = []
     remote_token_ids = []
+    input_ids=None
     async for res in result_generator:
         if await raw_request.is_disconnected():
             # Abort the request if the client disconnects.
             await VariableInterface.async_engine.stop_session(request.session_id)
             return create_error_response(HTTPStatus.BAD_REQUEST, 'Client disconnected')
+        if input_ids is None:
+            input_ids = res.input_ids
         final_res = res
         text += res.response
         if res.token_ids:
@@ -620,6 +623,7 @@ async def chat_completions_v1(request: ChatCompletionRequest, raw_request: Reque
     choices = []
     if request.return_token_ids:
         message.gen_tokens = final_token_ids
+        message.input_ids = input_ids
     choice_data = ChatCompletionResponseChoice(
         index=0,
         message=message,

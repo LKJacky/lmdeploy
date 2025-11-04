@@ -183,6 +183,7 @@ class ChatMessage(BaseModel):
     role: str
     content: Optional[str] = None
     gen_tokens: Optional[List[int]] = None
+    input_ids: Optional[List[int]] = None
     reasoning_content: Optional[str] = Field(default=None, examples=[None])
     tool_calls: Optional[List[ToolCall]] = Field(default=None, examples=[None])
 
